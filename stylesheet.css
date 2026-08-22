@@ -1,0 +1,27 @@
+#panel {
+    height: 38px;
+}
+
+#panel .music-lyrics-indicator {
+    margin: 4px 6px;
+    padding: 0 5px;
+    border-radius: 11px;
+    background-color: rgba(255, 255, 255, 0.09);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+#panel .music-lyrics-indicator:hover,
+#panel .music-lyrics-indicator:active,
+#panel .music-lyrics-indicator:checked {
+    background-color: rgba(255, 255, 255, 0.16);
+}
+
+#panel .music-lyrics-label {
+    font-size: 16px;
+    font-weight: 600;
+    padding: 0 10px;
+    max-width: 760px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.96);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}

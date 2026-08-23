@@ -76,7 +76,7 @@ const MusicLyricsIndicator = GObject.registerClass(
             this._infoIcon = new St.Icon({
                 icon_name: 'dialog-information-symbolic',
                 style_class: 'system-status-icon',
-                icon_size: 16,
+                icon_size: 18,
                 y_align: Clutter.ActorAlign.CENTER,
                 opacity: 0,
                 reactive: true

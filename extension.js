@@ -106,8 +106,12 @@ const MusicLyricsIndicator = GObject.registerClass(
             });
 
             this._currentTrack = null;
+            this._currentTrackKey = null;
             this._currentLyrics = null;
             this._currentLine = '';
+            this._lyricsAttemptedForTrack = false;
+            this._positionOffsetUs = 0;
+            this._positionOffsetTrackKey = null;
             this._proxy = null;
             this._propertiesChangedId = null;
             this._lyricsTimeoutId = null;
@@ -201,6 +205,8 @@ const MusicLyricsIndicator = GObject.registerClass(
                 this._showLyrics = item.state;
                 if (!item.state) {
                     this._stopLyricsWork();
+                } else {
+                    this._lyricsAttemptedForTrack = false;
                 }
                 this._updateTrackInfo();
             });
@@ -474,6 +480,11 @@ const MusicLyricsIndicator = GObject.registerClass(
             this._proxy = null;
             this._playerProxy = null;
             this._currentBusName = null;
+            this._currentTrack = null;
+            this._currentTrackKey = null;
+            this._lyricsAttemptedForTrack = false;
+            this._positionOffsetUs = 0;
+            this._positionOffsetTrackKey = null;
         }
 
         _updatePlayerInfo() {
@@ -545,6 +556,14 @@ const MusicLyricsIndicator = GObject.registerClass(
                     return;
                 }
 
+                const trackKey = JSON.stringify([
+                    this._currentBusName,
+                    artist || 'Unknown Artist',
+                    title || 'Unknown Track',
+                    album || 'Unknown Album'
+                ]);
+                const trackChanged = trackKey !== this._currentTrackKey;
+
                 this._currentTrack = {
                     title: title || 'Unknown Track',
                     artist: artist || 'Unknown Artist',
@@ -552,13 +571,20 @@ const MusicLyricsIndicator = GObject.registerClass(
                     url: trackUrl
                 };
 
+                if (trackChanged) {
+                    this._currentTrackKey = trackKey;
+                    this._lyricsAttemptedForTrack = false;
+                    this._preparePlaybackPosition(trackKey, trackUrl);
+                }
+
                 // Update menu with track info
                 this._trackInfoItem.label.text = `${this._currentTrack.artist} - ${this._currentTrack.title}`;
 
                 // Try to fetch lyrics if enabled
-                if (this._showLyrics) {
+                if (this._showLyrics && !this._lyricsAttemptedForTrack) {
+                    this._lyricsAttemptedForTrack = true;
                     this._fetchLyrics(this._currentTrack.title, this._currentTrack.artist, this._currentTrack.url);
-                } else {
+                } else if (!this._showLyrics) {
                     this._updateLabelText(`${this._currentTrack.artist} - ${this._currentTrack.title}`);
                 }
             } catch (e) {
@@ -760,6 +786,38 @@ const MusicLyricsIndicator = GObject.registerClass(
             });
         }
 
+        _preparePlaybackPosition(trackKey, trackUrl) {
+            this._positionOffsetTrackKey = trackKey;
+            this._positionOffsetUs = 0;
+
+            if (!trackUrl?.includes('music.apple.com') || !this._proxy) {
+                return;
+            }
+
+            this._positionOffsetUs = null;
+            this._proxy.call(
+                'Get',
+                new GLib.Variant('(ss)', [MPRIS_PLAYER_INTERFACE, 'Position']),
+                Gio.DBusCallFlags.NONE,
+                -1,
+                null,
+                (proxy, result) => {
+                    if (this._currentTrackKey !== trackKey) {
+                        return;
+                    }
+
+                    try {
+                        const reply = proxy.call_finish(result);
+                        const rawPositionUs = reply.get_child_value(0).get_variant().get_int64();
+                        this._positionOffsetUs = rawPositionUs > 5_000_000 ? rawPositionUs : 0;
+                    } catch (e) {
+                        this._positionOffsetUs = 0;
+                        logError(e, 'Failed to prepare Apple Music position');
+                    }
+                }
+            );
+        }
+
         _updateCurrentLyricLine() {
             if (!this._proxy || !this._currentLyrics || this._currentLyrics.length === 0) {
                 return;
@@ -777,8 +835,21 @@ const MusicLyricsIndicator = GObject.registerClass(
                         try {
                             const reply = proxy.call_finish(result);
                             // Reply is a tuple containing a variant, extract the int64 value
-                            const positionUs = reply.get_child_value(0).get_variant().get_int64();
-                            const positionMs = positionUs / 1000; // Convert microseconds to milliseconds
+                            const rawPositionUs = reply.get_child_value(0).get_variant().get_int64();
+                            let offsetUs = this._positionOffsetTrackKey === this._currentTrackKey
+                                ? this._positionOffsetUs
+                                : 0;
+
+                            if (offsetUs === null) {
+                                return;
+                            }
+
+                            if (rawPositionUs + 2_000_000 < offsetUs) {
+                                this._positionOffsetUs = 0;
+                                offsetUs = 0;
+                            }
+
+                            const positionMs = Math.max(0, rawPositionUs - offsetUs) / 1000;
 
                             // Find the current lyric line
                             let currentLine = this._currentLyrics[0].text;

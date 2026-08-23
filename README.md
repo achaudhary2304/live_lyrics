@@ -6,6 +6,7 @@ playing song directly in the top bar.
 ## Features
 
 - Real-time LRC lyrics synchronized through MPRIS playback position
+- Corrects Apple Music Web's cumulative browser playback clock per track
 - Supports Firefox, Chromium-based browsers, Spotify, Strawberry, and other
   MPRIS-compatible players
 - Searches Musixmatch, LRCLIB, NetEase, Megalobiz, and Genius

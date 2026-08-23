@@ -36,8 +36,8 @@ sudo apt install python3-venv ffmpeg flac
 ## Install
 
 ```bash
-git clone https://github.com/achaudhary2304/gnome-music-lyrics.git
-cd gnome-music-lyrics
+git clone https://github.com/achaudhary2304/live_lyrics.git
+cd live_lyrics
 ./install.sh
 ```
 

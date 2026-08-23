@@ -24,7 +24,25 @@ const SYNCED_LYRICS_PYTHON = GLib.build_filenamev([
     'bin',
     'python3'
 ]);
-const SYNCED_LYRICS_SCRIPT = 'import syncedlyrics, sys; result = syncedlyrics.search(sys.argv[1]); print(result or "")';
+const SYNCED_LYRICS_SCRIPT = String.raw`
+import re
+import syncedlyrics
+import sys
+
+artist, title = sys.argv[1], sys.argv[2]
+exact_query = f"{artist} {title}".strip()
+normalized_artist = re.sub(r"\s*[&,]\s*", " ", artist)
+normalized_title = re.sub(r"\s*[\[(].*?[\])]\s*$", "", title)
+normalized_query = re.sub(r"\s+", " ", f"{normalized_artist} {normalized_title}").strip()
+
+result = syncedlyrics.search(exact_query, synced_only=True)
+if not result and normalized_query != exact_query:
+    result = syncedlyrics.search(normalized_query, synced_only=True)
+if not result:
+    result = syncedlyrics.search(exact_query)
+
+print(result or "")
+`;
 
 // Helper function to check if a bus name is a supported music player
 function isSupportedPlayer(busName) {
@@ -206,7 +224,7 @@ const MusicLyricsIndicator = GObject.registerClass(
             const githubItem = new PopupMenu.PopupMenuItem('View on GitHub');
             githubItem.connect('activate', () => {
                 Gio.AppInfo.launch_default_for_uri(
-                    'https://github.com/achaudhary2304/gnome-music-lyrics',
+                    'https://github.com/achaudhary2304/live_lyrics',
                     null
                 );
             });
@@ -609,7 +627,8 @@ const MusicLyricsIndicator = GObject.registerClass(
                 SYNCED_LYRICS_PYTHON,
                 '-c',
                 SYNCED_LYRICS_SCRIPT,
-                `${artist} ${title}`
+                artist,
+                title
             ], lyrics => {
                 if (!this._displayLyrics(lyrics)) {
                     this._updateLabelText(`Lyrics unavailable · ${artist} - ${title}`);
@@ -672,7 +691,11 @@ const MusicLyricsIndicator = GObject.registerClass(
             const firstLine = lyrics
                 .split('\n')
                 .map(line => line.trim())
-                .find(line => line && !/^\[[a-z]+:/i.test(line));
+                .find(line => line &&
+                    !/^\[[^\]]+\]$/.test(line) &&
+                    !/^\d+\s+contributors?$/i.test(line) &&
+                    !/^.+\s+lyrics$/i.test(line) &&
+                    !/^(translations?|read more|embed|you might also like)$/i.test(line));
 
             if (!firstLine) {
                 return false;

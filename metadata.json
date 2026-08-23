@@ -1,6 +1,6 @@
 {
   "description": "Displays synchronized lyrics from multiple providers for MPRIS-compatible media players, with embedded-lyrics support for local audio files.",
-  "name": "Music Lyrics",
+  "name": "Live Lyrics",
   "settings-schema": "org.gnome.shell.extensions.music-lyrics",
   "shell-version": [
     "45",

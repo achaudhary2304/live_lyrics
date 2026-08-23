@@ -1,39 +1,27 @@
-# Music Lyrics
+# Live Lyrics
 
-Music Lyrics is a GNOME Shell extension that displays synchronized lyrics in
-the top bar for Firefox, Spotify, Strawberry, and other MPRIS-compatible media
-players.
-
-This project is a modified version of
-[Spotline](https://github.com/d3osaju/Spotline) by d3osaju. It retains the
-original project's GPL-3.0 license and clearly documents the changes made in
-this fork.
+A GNOME Shell extension that displays synchronized lyrics for the currently
+playing song directly in the top bar.
 
 ## Features
 
-- Detects active players and reads track metadata through D-Bus/MPRIS.
-- Displays timestamped LRC lyrics in sync with the playback position.
-- Searches Musixmatch, LRCLIB, NetEase, Megalobiz, and Genius through the
-  `syncedlyrics` Python package.
-- Reads embedded lyrics from local audio files using `ffprobe`, with an
-  additional `metaflac` fallback for FLAC files.
-- Provides previous, play/pause, and next controls in the panel menu.
-- Supports left, center, or right panel placement and configurable text length.
+- Real-time LRC lyrics synchronized through MPRIS playback position
+- Supports Firefox, Chromium-based browsers, Spotify, Strawberry, and other
+  MPRIS-compatible players
+- Searches Musixmatch, LRCLIB, NetEase, Megalobiz, and Genius
+- Reads embedded lyrics from local audio files using `ffprobe` and `metaflac`
+- Includes previous, play/pause, and next controls
+- Configurable panel position and maximum text length
 
-## Requirements
+## Installation
 
-- GNOME Shell 45 or 46
-- Python 3 with the `venv` module
-- `ffprobe` for embedded local-file lyrics (optional)
-- `metaflac` for the FLAC-specific fallback (optional)
-
-On Ubuntu, the dependencies can be installed with:
+Install the required packages on Ubuntu:
 
 ```bash
 sudo apt install python3-venv ffmpeg flac
 ```
 
-## Install
+Clone and install the extension:
 
 ```bash
 git clone https://github.com/achaudhary2304/live_lyrics.git
@@ -41,8 +29,8 @@ cd live_lyrics
 ./install.sh
 ```
 
-Then log out and back in. On an X11 session, you can instead restart GNOME
-Shell with `Alt+F2`, followed by `r` and Enter. Enable the extension with:
+Restart GNOME Shell by logging out and back in. On X11, press `Alt+F2`, enter
+`r`, and press Enter. Then enable the extension:
 
 ```bash
 gnome-extensions enable music-lyrics@achaudhary2304.github.io
@@ -50,42 +38,24 @@ gnome-extensions enable music-lyrics@achaudhary2304.github.io
 
 ## How it works
 
-The browser or music player exposes the current title, artist, playback state,
-and position through MPRIS. The extension uses that metadata to search for
-lyrics. Synchronized results are parsed as LRC timestamps, and the current line
-is selected every 500 milliseconds using the MPRIS playback position.
+The extension uses D-Bus/MPRIS to detect the active media player and read its
+track metadata, playback state, and position. A Python helper powered by
+[`syncedlyrics`](https://github.com/moehmeni/syncedlyrics) searches multiple
+lyrics providers. Timestamped LRC results are parsed and updated in the panel
+every 500 milliseconds.
 
-For local `file://` tracks, embedded tags are checked before an online search.
-For streamed tracks, the extension starts an isolated Python helper and asks
-`syncedlyrics` to try its supported providers in sequence.
+For local audio files, embedded lyrics are checked before starting an online
+search. Old searches are cancelled when the track changes so that stale lyrics
+cannot replace the current song.
 
-## Privacy and network access
+## Privacy
 
-Online lyric lookup sends the current artist and title to third-party lyric
-providers selected by `syncedlyrics`. The extension does not inspect browser
-tabs, scrape the Apple Music page, collect listening history, or include
-telemetry. Provider availability and behavior can change independently of this
-project.
+Online searches send the current artist and title to third-party lyrics
+providers. The extension does not inspect browser tabs, store listening
+history, or include telemetry.
 
-## Development
+## Credits
 
-The extension source is the set of files at the repository root. Validate the
-JavaScript and compile the settings schema with:
-
-```bash
-node --check extension.js
-glib-compile-schemas schemas
-```
-
-`schemas/gschemas.compiled` is generated locally and is intentionally ignored
-by Git.
-
-## Credits and license
-
-- Based on [Spotline](https://github.com/d3osaju/Spotline) by d3osaju.
-- Uses [syncedlyrics](https://github.com/moehmeni/syncedlyrics), an MIT-licensed
-  runtime dependency that is not vendored in this repository.
-- Modifications copyright (C) 2026 Aryan Chaudhary.
-
-This project is distributed under the GNU General Public License v3.0. See
-[LICENSE](LICENSE).
+Live Lyrics is based on [Spotline](https://github.com/d3osaju/Spotline) by
+d3osaju and remains licensed under [GPL-3.0](LICENSE). The online lyrics helper
+uses the MIT-licensed `syncedlyrics` package.

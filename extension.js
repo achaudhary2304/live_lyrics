@@ -1,5 +1,5 @@
 /*
- * Music Lyrics GNOME Shell Extension
+ * Live Lyrics GNOME Shell Extension
  * Based on Spotline by d3osaju: https://github.com/d3osaju/Spotline
  * Modifications copyright (C) 2026 Aryan Chaudhary.
  * SPDX-License-Identifier: GPL-3.0-only
